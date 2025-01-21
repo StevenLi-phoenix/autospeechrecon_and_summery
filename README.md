@@ -1,16 +1,37 @@
-# AI Lecture Note Taker
+# 课堂笔记记录系统
 
-一个基于Whisper和GPT的智能课堂笔记记录系统，能够实时录音、转录和生成结构化的课堂笔记。
+一个基于 AI 的自动课堂笔记记录和总结系统。
 
 ## 功能特点
 
-- 🎙️ 实时录音捕捉
-- 🤖 使用OpenAI Whisper进行本地语音转文字
-- 📝 使用GPT生成结构化笔记
-- ⏱️ 智能分段和主题识别
-- 📂 按日期组织的笔记存储系统
-- 🔄 支持本地或云端LLM切换
-- 📊 Markdown格式的笔记输出
+- 🎤 实时录音：自动分段录制课堂音频
+- 🤖 语音识别：使用 OpenAI Whisper 进行准确的语音转文字
+- 📝 智能总结：使用 GPT 模型生成结构化的课堂笔记
+- ⏱️ 实时处理：每个录音片段都会立即处理并生成总结
+- 📊 智能分段：基于内容和停顿自动进行内容分段
+- 📑 完整记录：保存原始音频、转录文本和总结笔记
+
+## 使用的技术
+
+- **语音识别**: OpenAI Whisper
+- **文本总结**: OpenAI GPT-4/3.5
+- **音频处理**: PyAudio
+- **进度显示**: tqdm
+- **开发环境**: Cursor IDE
+
+## 致谢
+
+本项目使用 [Cursor](https://cursor.sh) - The AI-first Code Editor 开发。
+
+特别感谢以下开源项目：
+- [OpenAI Whisper](https://github.com/openai/whisper)
+- [OpenAI GPT](https://openai.com/gpt-4)
+- [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/)
+- [tqdm](https://github.com/tqdm/tqdm)
+
+## 许可证
+
+MIT License
 
 ## 系统要求
 
@@ -147,10 +168,6 @@ lecture_notes/
 - [ ] 支持笔记导出为更多格式
 - [ ] 添加语音活动检测
 - [ ] 优化智能分段算法
-
-## 许可证
-
-[您的许可证类型]
 
 ## 贡献指南
 
