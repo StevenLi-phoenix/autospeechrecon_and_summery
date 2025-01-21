@@ -6,6 +6,9 @@ from config import Config
 import time
 from pathlib import Path
 from tqdm import tqdm
+import threading
+from queue import Queue
+import traceback
 
 class VoiceSummaryApp:
     def __init__(self, api_key=None, config_path="config.json"):
@@ -29,14 +32,55 @@ class VoiceSummaryApp:
         self.summarizer = Summarizer(api_key, self.config)
         self.save_dir = Path(self.config["recording"]["save_dir"])
         
+        # 初始化处理队列和线程
+        self.processing_queue = Queue()
+        self.is_running = True
+        self.processing_thread = None
+        
+    def process_audio_files(self):
+        """处理音频文件的线程函数"""
+        while self.is_running:
+            try:
+                # 从队列中获取文件，如果1秒内没有新文件则继续循环
+                try:
+                    audio_file = self.processing_queue.get(timeout=1)
+                except Queue.Empty:
+                    continue
+                
+                # 转录
+                print(f"\n处理文件: {audio_file.name}")
+                segments = self.transcriber.transcribe_with_timestamps(audio_file)
+                
+                # 合并所有文本
+                text = " ".join([seg["text"] for seg in segments])
+                
+                # 生成总结
+                summary = self.summarizer.summarize(text)
+                print("\n本段总结:")
+                print(summary)
+                print("-" * 50)
+                
+            except Exception as e:
+                print(f"\n处理出错: {str(e)}")
+                traceback.print_exc()
+                
     def start(self):
+        print("\n=== 课堂笔记记录系统 ===")
+        print("Powered by Cursor - The AI-first Code Editor")
+        print("https://cursor.sh")
+        print("-" * 50)
         print(f"使用Whisper模型: {self.config['whisper']['model_name']}")
         print(f"使用LLM类型: {self.config['llm']['api_type']} - {self.config['llm']['model']}")
         print(f"笔记保存位置: {self.config['output']['summary_dir']}")
-        print("\n=== 课堂笔记记录系统已启动 ===")
+        print("\n=== 系统已启动 ===")
         print("提示：按 Ctrl+C 停止记录")
         print("\n正在记录中...")
         
+        # 启动处理线程
+        self.processing_thread = threading.Thread(target=self.process_audio_files)
+        self.processing_thread.start()
+        
+        # 启动录音
         self.recorder.start_recording()
         interval = self.config["recording"]["interval"]
         
@@ -49,28 +93,10 @@ class VoiceSummaryApp:
                             ncols=80):
                     time.sleep(1)
                 
-                # 获取最新的录音文件
+                # 获取最新的录音文件并加入处理队列
                 audio_files = sorted(self.save_dir.glob("*.wav"))
-                if not audio_files:
-                    continue
-                    
-                latest_file = audio_files[-1]
-                
-                # 转录
-                print(f"\n处理文件: {latest_file.name}")
-                segments = self.transcriber.transcribe_with_timestamps(latest_file)
-                
-                # 智能分段
-                segment_groups = self.summarizer.smart_cut(segments)
-                
-                # 对每个分段进行总结
-                for i, segment_group in enumerate(segment_groups):
-                    text = " ".join([seg["text"] for seg in segment_group])
-                    summary = self.summarizer.summarize(text)
-                    
-                    print(f"\n时间段 {i+1} 总结:")
-                    print(summary)
-                    print("-" * 50)
+                if audio_files:
+                    self.processing_queue.put(audio_files[-1])
                 
         except KeyboardInterrupt:
             print("\n停止录音和总结...")
@@ -82,14 +108,15 @@ class VoiceSummaryApp:
                 latest_file = audio_files[-1]
                 print(f"\n处理最后一段录音: {latest_file.name}")
                 segments = self.transcriber.transcribe_with_timestamps(latest_file)
-                segment_groups = self.summarizer.smart_cut(segments)
-                
-                for i, segment_group in enumerate(segment_groups):
-                    text = " ".join([seg["text"] for seg in segment_group])
-                    summary = self.summarizer.summarize(text)
-                    print(f"\n最后时间段 {i+1} 总结:")
-                    print(summary)
-                    print("-" * 50)
+                text = " ".join([seg["text"] for seg in segments])
+                summary = self.summarizer.summarize(text)
+                print("\n最后一段总结:")
+                print(summary)
+                print("-" * 50)
+            
+            # 停止处理线程
+            self.is_running = False
+            self.processing_thread.join()
             
             # 生成整体总结
             print("\n生成课程整体总结...")

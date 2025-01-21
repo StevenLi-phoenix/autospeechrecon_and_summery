@@ -106,34 +106,6 @@ class Summarizer:
         with open(data_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
-    def smart_cut(self, segments):
-        """
-        智能分段：基于课堂内容的自然停顿和主题转换
-        """
-        current_segment = []
-        segments_groups = []
-        
-        for segment in segments:
-            current_segment.append(segment)
-            
-            # 调整分段策略：
-            # 1. 如果超过5分钟
-            # 2. 遇到较长停顿（可能是主题转换）
-            # 3. 检测到可能的主题转换标记词（如 "next", "moving on", "let's talk about"）
-            if (segment["end"] - segment["start"] >= 300 or  # 5分钟
-                (len(current_segment) > 1 and 
-                 current_segment[-1]["start"] - current_segment[-2]["end"] > 2.0) or  # 2秒停顿
-                any(marker in segment["text"].lower() 
-                    for marker in ["next", "moving on", "now let's", "let's talk about"])):
-                
-                segments_groups.append(current_segment)
-                current_segment = []
-        
-        if current_segment:
-            segments_groups.append(current_segment)
-            
-        return segments_groups
-
     def summarize_all(self, date_str=None):
         """
         总结指定日期或当天的所有笔记，并合并录音文件
