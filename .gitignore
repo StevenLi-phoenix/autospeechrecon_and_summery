@@ -1,0 +1,9 @@
+# ignore pycache
+src/__pycache__
+# ignore venv environment
+.venv
+# due to api key, ignore config.json
+config.json
+# ignore recordings and notes
+lecture_recordings
+lecture_notes
